@@ -1,0 +1,105 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Swift/iOS
+.build/
+.xcodeproj/
+.xcworkspace/
+xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+.swiftpm/
+
+# Test & Build Artifacts
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+htmlcov/
+.coverage
+
+# Dependencies & Locks
+Pods/
+Podfile.lock
+.gradle/
+
+# OS & Temporary Files
+*.log
+*.tmp
+Thumbs.db
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
+# Generated Files
+*.mp3
+*.wav
+*.flac
+*.m4a
+fixtures/generated/
+test_results/
+reports/
+
+# Environment
+.env
+.env.local
+
+# macOS
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/workspace.xml
+.project
+.pydevproject
+.settings/
+.md

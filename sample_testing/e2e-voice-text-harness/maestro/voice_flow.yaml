@@ -1,0 +1,24 @@
+# Maestro flow: voice button interaction smoke test
+# Actual audio injection + capture is handled by the XCTest bridge.
+# This flow validates the UI state machine (button states, message appearance).
+
+appId: com.example.VoiceTextDemo
+---
+- launchApp
+- assertVisible:
+    id: voice_button
+- tapOn:
+    id: voice_button
+# Voice button should now show stop icon (recording state)
+- assertVisible:
+    id: voice_button
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: voice_button
+# After stop: wait for assistant response
+- waitForAnimationToEnd:
+    timeout: 30000
+- assertVisible:
+    id: assistant_message
+- takeScreenshot: reports/maestro_voice_smoke

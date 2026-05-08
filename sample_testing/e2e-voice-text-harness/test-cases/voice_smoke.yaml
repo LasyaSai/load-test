@@ -1,0 +1,29 @@
+# Voice smoke test cases
+# Non-technical authors: edit expected_intent in plain English.
+# For input_audio: record a voice memo, save as WAV in fixtures/, reference the path here.
+
+- id: voice_greeting_basic
+  type: voice
+  input_audio: fixtures/hello_how_are_you.wav
+  expected_intent: "Agent greets the user warmly and offers to help"
+  latency_budget_ms: 5000
+  tags: [smoke, voice, greeting]
+
+- id: voice_weather_dubai
+  type: voice
+  input_audio: fixtures/weather.wav
+  expected_intent: "Agent provides weather information for Dubai"
+  assert_tool_called: get_weather
+  latency_budget_ms: 6000
+  tags: [smoke, voice, tool-call]
+
+- id: voice_multi_turn_booking
+  type: voice
+  turns:
+    - input_audio: fixtures/movie.wav
+      expected_intent: "give details regarding booking a movie ticket"
+    - input_audio: fixtures/news.wav
+      expected_intent: "Agent provides the latest news regarding AI"
+  latency_budget_ms: 8000
+  tags: [smoke, voice, multi-turn]
+

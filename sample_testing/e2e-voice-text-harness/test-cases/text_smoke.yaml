@@ -1,0 +1,35 @@
+# Text smoke test cases
+# Non-technical authors: add a new block below. Only 'id', 'type', 'input_text',
+# 'expected_intent', and 'tags' are required.
+
+- id: text_greeting_basic
+  type: text
+  input_text: "Hello! How are you?"
+  expected_intent: "Agent responds with a friendly greeting"
+  tags: [smoke, text, greeting]
+
+- id: text_weather_london
+  type: text
+  input_text: "What's the weather in London right now?"
+  expected_intent: "Agent responds with weather information for London"
+  assert_tool_called: get_weather
+  tags: [smoke, text, tool-call]
+
+- id: text_weather_dubai
+  type: text
+  input_text: "What is the weather like in Dubai today?"
+  expected_intent: "Agent provides current weather conditions for Dubai"
+  assert_tool_called: get_weather
+  tags: [smoke, text, tool-call]
+
+- id: text_booking_request
+  type: text
+  input_text: "Can you help me book a table for dinner tomorrow night for 4 people?"
+  expected_intent: "Agent acknowledges the request and either asks for more details or confirms it can help with booking"
+  tags: [smoke, text, booking]
+
+- id: text_off_topic_graceful
+  type: text
+  input_text: "What is the capital of Australia?"
+  expected_intent: "Agent answers with Canberra or provides factual information about Australia's capital"
+  tags: [smoke, text, factual]

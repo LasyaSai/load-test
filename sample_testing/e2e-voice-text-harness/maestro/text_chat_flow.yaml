@@ -1,0 +1,21 @@
+# Maestro flow: text chat smoke test
+# Run with: maestro test maestro/text_chat_flow.yaml
+#
+# Maestro handles UI interaction. The Python runner dispatches this
+# flow for text cases that don't need the XCTest audio bridge.
+
+appId: com.example.VoiceTextDemo
+---
+- launchApp
+- assertVisible:
+    id: text_input_field
+- tapOn:
+    id: text_input_field
+- inputText: "Hello, can you help me?"
+- tapOn:
+    id: send_text_button
+- waitForAnimationToEnd:
+    timeout: 30000
+- assertVisible:
+    id: assistant_message
+- takeScreenshot: reports/maestro_text_smoke

@@ -1,0 +1,33 @@
+# Regression test cases
+# These cases demonstrate the harness catching a deliberately introduced break.
+#
+# The 'regression_break: true' flag tells the runner to launch the app with
+# REGRESSION_BREAK_TOOL_CALL=YES, which removes the weather tool from the
+# system prompt, causing the agent to never call get_weather.
+#
+# Expected outcome: both cases below FAIL, proving the harness catches the regression.
+
+- id: regression_weather_tool_removed_text
+  type: text
+  input_text: "What's the weather in Paris?"
+  expected_intent: "Agent provides weather information for Paris"
+  assert_tool_called: get_weather   # WILL FAIL — tool removed by regression flag
+  regression_break: true
+  tags: [regression, text, tool-call]
+
+- id: regression_weather_tool_removed_voice
+  type: voice
+  input_audio: fixtures/whats_the_weather_in_dubai.wav
+  expected_intent: "Agent provides weather information for Dubai"
+  assert_tool_called: get_weather   # WILL FAIL — tool removed by regression flag
+  regression_break: true
+  tags: [regression, voice, tool-call]
+
+- id: regression_semantic_wrong_answer
+  type: text
+  input_text: "What is 2 + 2?"
+  expected_intent: "Agent answers with the number four"
+  # This case uses a patched system prompt that makes the agent answer '5'
+  # to demonstrate semantic judge catching a wrong answer.
+  regression_break: true
+  tags: [regression, text, semantic]
