@@ -97,8 +97,9 @@ def run_case(case_def: dict) -> dict:
         "OPENROUTER_API_KEY": os.environ.get("OPENROUTER_API_KEY", ""),
         "OPENROUTER_BASE_URL": os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         "OPENROUTER_MODEL": os.environ.get("OPENROUTER_MODEL", "openrouter/free"),
-        "TRANSCRIPTION_PROVIDER": os.environ.get("TRANSCRIPTION_PROVIDER", "local"),
-        "TRANSCRIPTION_MODEL": os.environ.get("TRANSCRIPTION_MODEL", "base"),
+        "TRANSCRIPTION_PROVIDER": os.environ.get("TRANSCRIPTION_PROVIDER", "openrouter"),
+        "TRANSCRIPTION_MODEL": os.environ.get("TRANSCRIPTION_MODEL", "openrouter/free"),
+        "TRANSCRIPTION_LOCAL_MODEL": os.environ.get("TRANSCRIPTION_LOCAL_MODEL", "base"),
     }
 
     if case_def.get("type") == "text":

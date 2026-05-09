@@ -75,14 +75,65 @@ class AudioManager: NSObject {
         NotificationCenter.default.post(name: .ttsDidStart, object: nil, userInfo: ["text": text])
     }
 
-    // MARK: - Local speech transcription
+    // MARK: - Cloud transcription
 
     private func transcribe(audioURL: URL) {
+        let provider = ProcessInfo.processInfo.environment["TRANSCRIPTION_PROVIDER"]?.lowercased() ?? "openrouter"
+
+        if provider == "openrouter" || provider == "auto" {
+            Task {
+                if let text = await transcribeWithOpenRouter(audioURL: audioURL) {
+                    onTranscription?(text)
+                    return
+                }
+                if let text = await transcribeOnDevice(audioURL: audioURL) {
+                    onTranscription?(text)
+                }
+            }
+            return
+        }
+
         Task {
             if let text = await transcribeOnDevice(audioURL: audioURL) {
                 onTranscription?(text)
             }
         }
+    }
+
+    private func transcribeWithOpenRouter(audioURL: URL) async -> String? {
+        guard let apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"] else {
+            return nil
+        }
+
+        let baseURL = ProcessInfo.processInfo.environment["OPENROUTER_BASE_URL"] ?? "https://openrouter.ai/api/v1"
+        let model = ProcessInfo.processInfo.environment["TRANSCRIPTION_MODEL"] ?? "openrouter/free"
+
+        var request = URLRequest(url: URL(string: "\(baseURL)/audio/transcriptions")!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        let audioData = (try? Data(contentsOf: audioURL)) ?? Data()
+        let payload: [String: Any] = [
+            "model": model,
+            "input_audio": [
+                "data": audioData.base64EncodedString(),
+                "format": audioURL.pathExtension.isEmpty ? "wav" : audioURL.pathExtension.lowercased()
+            ]
+        ]
+
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: payload) else {
+            return nil
+        }
+        request.httpBody = bodyData
+
+        guard let (data, _) = try? await URLSession.shared.data(for: request),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let text = json["text"] as? String,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+        return text
     }
 
     private func transcribeOnDevice(audioURL: URL) async -> String? {
