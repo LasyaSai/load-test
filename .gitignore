@@ -102,4 +102,5 @@ Desktop.ini
 .project
 .pydevproject
 .settings/
-.md
+.init
+__init__.py
