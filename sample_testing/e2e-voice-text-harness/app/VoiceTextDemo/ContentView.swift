@@ -97,7 +97,7 @@ struct MessageBubble: View {
                 Text(message.content)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(message.role == .user ? Color.blue : Color(.secondarySystemBackground))
+                    .background(message.role == .user ? Color.blue : Color(UIColor.secondarySystemBackground))
                     .foregroundColor(message.role == .user ? .white : .primary)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .accessibilityIdentifier("message_bubble_\(message.id)")
