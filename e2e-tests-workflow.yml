@@ -1,0 +1,88 @@
+name: E2E Voice & Text Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e-tests:
+    runs-on: macos-latest
+    
+    steps:
+      # Step 1: Check out code
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      # Step 3: Install Python dependencies
+      - name: Install Python dependencies
+        working-directory: sample_testing/e2e-voice-text-harness
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      # Step 4: Set up Xcode
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+      
+      # Step 5: Build iOS app
+      - name: Build iOS app
+        working-directory: sample_testing/e2e-voice-text-harness
+        run: |
+          xcodebuild -scheme VoiceTextDemo \
+            -configuration Debug \
+            -derivedDataPath build \
+            -destination 'generic/platform=iOS Simulator' \
+            build
+      
+      # Step 6: Start WebSocket backend
+      - name: Start WebSocket backend
+        working-directory: sample_testing/e2e-voice-text-harness
+        run: |
+          python example_backend.py > backend.log 2>&1 &
+          sleep 3
+      
+      # Step 7: Verify backend is running
+      - name: Verify backend is running
+        run: |
+          sleep 2
+          nc -z localhost 8000 || (cat sample_testing/e2e-voice-text-harness/backend.log && exit 1)
+      
+      # Step 8: Run E2E tests
+      - name: Run E2E tests
+        working-directory: sample_testing/e2e-voice-text-harness
+        env:
+          WEBSOCKET_URL: ws://localhost:8000/transcribe
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: openrouter/free
+          IOS_SIMULATOR: "iPhone 15 Pro"
+        run: |
+          python harness/runner/run_tests.py --suite smoke \
+            --output reports/junit.xml \
+            --json-output reports/report.json
+      
+      # Step 9: Upload test reports
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: sample_testing/e2e-voice-text-harness/reports/
+      
+      # Step 10: Upload backend logs (debugging)
+      - name: Upload backend logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-logs
+          path: sample_testing/e2e-voice-text-harness/backend.log

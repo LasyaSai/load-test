@@ -35,6 +35,7 @@ class AudioBridgeTests: XCTestCase {
         case "voice":
             try runVoiceCase(outputPath: outputPath)
         default:
+        
             try runTextCase(outputPath: outputPath)
         }
     }
