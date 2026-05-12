@@ -35,10 +35,9 @@ jobs:
         run: |
           xcodebuild build \
             -scheme VoiceTextDemo \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build \
-            -allowProvisioningUpdates
+            -sdk iphonesimulator
 
       - name: Run Backend and Tests
         working-directory: sample_testing/e2e-voice-text-harness
