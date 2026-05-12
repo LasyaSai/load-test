@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-"""
-generate_fixtures.py — Generates synthetic WAV fixtures using TTS (gTTS or pyttsx3).
-Run this once to create the audio files needed for voice test cases.
-
-Usage:
-    pip install gTTS
-    python fixtures/scripts/generate_fixtures.py
-
-Output: WAV files written to fixtures/
-"""
-
 import os
 import subprocess
+import platform
 from pathlib import Path
+
+# Try to import Windows TTS engine as a fallback
+try:
+    import pyttsx3
+except ImportError:
+    pyttsx3 = None
 
 FIXTURES_DIR = Path(__file__).resolve().parents[1]
 
@@ -24,23 +20,23 @@ FIXTURES = {
     "travel.wav": "Where is good place to travel in UAE during May",
 }
 
-
 def generate_with_gtts():
-    """Generate fixtures using Google TTS (requires internet)."""
+    """Generate fixtures using Google TTS (requires internet and ffmpeg)."""
     try:
         from gtts import gTTS
-        import io
-        # gTTS produces MP3; convert to WAV via ffmpeg
         for filename, text in FIXTURES.items():
             out_path = FIXTURES_DIR / filename
             if out_path.exists():
                 print(f"  skip (exists): {filename}")
                 continue
-            print(f"  generating: {filename}")
+            
+            print(f"  generating (gTTS): {filename}")
             tts = gTTS(text=text, lang="en", slow=False)
             mp3_path = out_path.with_suffix(".mp3")
             tts.save(str(mp3_path))
+            
             # Convert MP3 → WAV (16kHz mono, 16-bit PCM)
+            # This works on Windows if ffmpeg is in your PATH
             subprocess.run([
                 "ffmpeg", "-y", "-i", str(mp3_path),
                 "-ar", "16000", "-ac", "1", "-acodec", "pcm_s16le",
@@ -48,33 +44,39 @@ def generate_with_gtts():
             ], check=True, capture_output=True)
             mp3_path.unlink()
         print("\nDone. Fixtures written to:", FIXTURES_DIR)
-    except ImportError:
-        print("gTTS not installed. Run: pip install gTTS")
-        generate_with_say_command()
+    except Exception as e:
+        print(f"gTTS failed: {e}")
+        generate_with_windows_tts()
 
+def generate_with_windows_tts():
+    """Windows fallback: use `pyttsx3` (no internet required)."""
+    if pyttsx3 is None:
+        print("ERROR: Neither gTTS nor pyttsx3 is installed.")
+        print("Please run: pip install gTTS pyttsx3")
+        return
 
-def generate_with_say_command():
-    """macOS fallback: use `say` command (no internet required)."""
-    print("Falling back to macOS `say` command...")
+    print("Falling back to Windows TTS (pyttsx3)...")
+    engine = pyttsx3.init()
     for filename, text in FIXTURES.items():
         out_path = FIXTURES_DIR / filename
         if out_path.exists():
             print(f"  skip (exists): {filename}")
             continue
-        print(f"  generating: {filename}")
-        aiff_path = out_path.with_suffix(".aiff")
-        subprocess.run(["say", "-o", str(aiff_path), text], check=True)
-        subprocess.run([
-            "afconvert", str(aiff_path), str(out_path),
-            "-d", "LEI16", "-f", "WAVE", "--rate", "16000"
-        ], check=True)
-        aiff_path.unlink()
+        print(f"  generating (offline): {filename}")
+        # Note: pyttsx3 saves directly to wav on Windows
+        engine.save_to_file(text, str(out_path))
+        engine.runAndWait()
     print("\nDone. Fixtures written to:", FIXTURES_DIR)
 
-
 if __name__ == "__main__":
-    FIXTURES_DIR.mkdir(exist_ok=True)
-    if subprocess.run(["which", "ffmpeg"], capture_output=True).returncode == 0:
+    FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Check for ffmpeg
+    check_cmd = "where" if platform.system() == "Windows" else "which"
+    has_ffmpeg = subprocess.run([check_cmd, "ffmpeg"], capture_output=True).returncode == 0
+    
+    if has_ffmpeg:
         generate_with_gtts()
     else:
-        generate_with_say_command()
+        print("ffmpeg not found. Skipping gTTS and trying offline Windows TTS...")
+        generate_with_windows_tts()

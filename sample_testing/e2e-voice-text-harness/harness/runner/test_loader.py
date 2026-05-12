@@ -7,7 +7,7 @@ from typing import Any
 import yaml
 
 
-REQUIRED_FIELDS = {"id", "type", "expected_intent"}
+REQUIRED_FIELDS = {"id", "type"}
 
 
 def load_suite(suite_tag: str, repo_root: Path) -> list[dict[str, Any]]:

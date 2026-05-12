@@ -75,114 +75,15 @@ class AudioManager: NSObject {
         NotificationCenter.default.post(name: .ttsDidStart, object: nil, userInfo: ["text": text])
     }
 
-    // MARK: - Cloud transcription
+    // MARK: - Transcription (no‑STT default)
 
     private func transcribe(audioURL: URL) {
-        let provider = ProcessInfo.processInfo.environment["TRANSCRIPTION_PROVIDER"]?.lowercased() ?? "openrouter"
-
-        if provider == "openrouter" || provider == "auto" {
-            Task {
-                if let text = await transcribeWithOpenRouter(audioURL: audioURL) {
-                    onTranscription?(text)
-                    return
-                }
-                if let text = await transcribeOnDevice(audioURL: audioURL) {
-                    onTranscription?(text)
-                }
-            }
-            return
-        }
-
-        Task {
-            if let text = await transcribeOnDevice(audioURL: audioURL) {
-                onTranscription?(text)
-            }
-        }
+        // No‑STT default for developer mode: derive transcript from filename.
+        // This avoids any external API keys and keeps tests deterministic.
+        let transcript = audioURL.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "_", with: " ")
+        onTranscription?(transcript)
     }
 
-    private func transcribeWithOpenRouter(audioURL: URL) async -> String? {
-        guard let apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"] else {
-            return nil
-        }
-
-        let baseURL = ProcessInfo.processInfo.environment["OPENROUTER_BASE_URL"] ?? "https://openrouter.ai/api/v1"
-        let model = ProcessInfo.processInfo.environment["TRANSCRIPTION_MODEL"] ?? "openrouter/free"
-
-        var request = URLRequest(url: URL(string: "\(baseURL)/audio/transcriptions")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-
-        let audioData = (try? Data(contentsOf: audioURL)) ?? Data()
-        let payload: [String: Any] = [
-            "model": model,
-            "input_audio": [
-                "data": audioData.base64EncodedString(),
-                "format": audioURL.pathExtension.isEmpty ? "wav" : audioURL.pathExtension.lowercased()
-            ]
-        ]
-
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: payload) else {
-            return nil
-        }
-        request.httpBody = bodyData
-
-        guard let (data, _) = try? await URLSession.shared.data(for: request),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let text = json["text"] as? String,
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return nil
-        }
-        return text
-    }
-
-    private func transcribeOnDevice(audioURL: URL) async -> String? {
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US")) else {
-            return nil
-        }
-
-        let authStatus = await requestSpeechAuthorization()
-        guard authStatus == .authorized else {
-            return nil
-        }
-
-        guard recognizer.isAvailable else {
-            return nil
-        }
-
-        return await withCheckedContinuation { continuation in
-            let request = SFSpeechURLRecognitionRequest(url: audioURL)
-            request.shouldReportPartialResults = false
-            request.requiresOnDeviceRecognition = true
-            request.taskHint = .dictation
-
-            var finished = false
-            let task = recognizer.recognitionTask(with: request) { result, error in
-                guard !finished else { return }
-
-                if let result, result.isFinal {
-                    finished = true
-                    continuation.resume(returning: result.bestTranscription.formattedString)
-                    return
-                }
-
-                if error != nil {
-                    finished = true
-                    continuation.resume(returning: nil)
-                }
-            }
-
-            _ = task
-        }
-    }
-
-    private func requestSpeechAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
-        await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { status in
-                continuation.resume(returning: status)
-            }
-        }
-    }
 }
 
 extension Notification.Name {

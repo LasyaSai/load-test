@@ -1,7 +1,7 @@
 """
 judge.py - LLM-as-judge semantic verification via OpenRouter.
 
-For voice cases: transcribes captured audio then judges the transcript.
+For voice cases: transcribes captured audio via WebSocket backend, then judges the transcript.
 For text cases: judges the response text directly.
 
 Uses 3-run consensus: all 3 must agree PASS for a PASS verdict.
@@ -11,7 +11,7 @@ This eliminates single-run LLM variance without ballooning cost.
 import os
 import json
 import httpx
-from .transcriber import transcribe
+from .websocket_client import transcribe
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
