@@ -1,6 +1,7 @@
 {
   "hello_how_are_you.wav": "Hello, I'm fine — how can I help you today?",
-  "weather.wav": "What's the weather in Dubai today?",
+  "weather.wav": "What's the weather like in Dubai today?",
+  "weather_regression.wav": "What is the best pizza to have in Dubai ",
   "movie.wav": "I'd like to book two tickets for the next showing of Inception",
   "news.wav": "Tell me the latest news about artificial intelligence",
   "indian_food.wav": "Can you recommend a good Indian restaurant nearby?"
