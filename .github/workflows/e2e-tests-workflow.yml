@@ -37,8 +37,7 @@ jobs:
       
       # Step 5: Build iOS app
       - name: Build iOS app
-        working-directory: sample_testing/e2e-voice-text-harness
-        run: |
+        working-directory: sample_testing/e2e-voice-text-harness/app/VoiceTextDemo
           xcodebuild -scheme VoiceTextDemo \
             -configuration Debug \
             -derivedDataPath build \
@@ -47,7 +46,7 @@ jobs:
       
       # Step 6: Start WebSocket backend
       - name: Start WebSocket backend
-        working-directory: sample_testing/e2e-voice-text-harness
+        working-directory: sample_testing/e2e-voice-text-harness/app/VoiceTextDemo
         run: |
           python example_backend.py > backend.log 2>&1 &
           sleep 3
