@@ -31,14 +31,14 @@ jobs:
           xcode-version: '16.0'
       
       - name: Build iOS app
-        # Updated to the specific folder where your Swift code lives
         working-directory: sample_testing/e2e-voice-text-harness/app/VoiceTextDemo
         run: |
           xcodebuild build \
+            -scheme VoiceTextDemo \
             -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
             -derivedDataPath build \
-            ONLY_ACTIVE_ARCH=NO
+            -allowProvisioningUpdates
 
       - name: Run Backend and Tests
         working-directory: sample_testing/e2e-voice-text-harness
