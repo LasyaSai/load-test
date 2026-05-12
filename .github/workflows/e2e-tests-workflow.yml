@@ -33,7 +33,11 @@ jobs:
       - name: Build iOS app
         working-directory: sample_testing/e2e-voice-text-harness/app
         run: |
-          swift build -c debug
+          xcodebuild build \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=NO
 
       - name: Start WebSocket backend
         working-directory: sample_testing/e2e-voice-text-harness
