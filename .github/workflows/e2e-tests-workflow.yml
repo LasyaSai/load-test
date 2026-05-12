@@ -33,7 +33,7 @@ jobs:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '15.2'
+          xcode-version: '16.0'
       
       # Step 5: Build iOS app
       - name: Build iOS app
