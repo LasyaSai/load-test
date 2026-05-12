@@ -23,7 +23,7 @@ jobs:
         working-directory: sample_testing/e2e-voice-text-harness
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || pip install httpx websockets python-dotenv
+          pip install httpx websockets python-dotenv
       
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -31,7 +31,8 @@ jobs:
           xcode-version: '16.0'
       
       - name: Build iOS app
-        working-directory: sample_testing/e2e-voice-text-harness/app
+        # Updated to the specific folder where your Swift code lives
+        working-directory: sample_testing/e2e-voice-text-harness/app/VoiceTextDemo
         run: |
           xcodebuild build \
             -sdk iphonesimulator \
@@ -39,19 +40,22 @@ jobs:
             -derivedDataPath build \
             ONLY_ACTIVE_ARCH=NO
 
-      - name: Start WebSocket backend
-        working-directory: sample_testing/e2e-voice-text-harness
-        run: |
-          python example_backend.py > backend.log 2>&1 &
-          sleep 5
-      
-      - name: Run E2E tests
+      - name: Run Backend and Tests
         working-directory: sample_testing/e2e-voice-text-harness
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENROUTER_MODEL: google/gemma-7b-it:free
         run: |
+          # Start backend in background and save PID
+          python example_backend.py > backend.log 2>&1 &
+          BACKEND_PID=$!
+          sleep 5
+          
+          # Run the tests
           python harness/runner/run_tests.py --suite smoke
+          
+          # Cleanup backend after tests finish
+          kill $BACKEND_PID || true
         continue-on-error: true
 
       - name: Upload test reports
