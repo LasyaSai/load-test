@@ -1,6 +1,6 @@
 import Foundation
 import XCTest
-
+@testable import VoiceTextDemo
 /// AudioBridgeTests drives the sample app through UI interactions and
 /// writes a small JSON payload for the Python harness to verify.
 final class AudioBridgeTests: XCTestCase {
