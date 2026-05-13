@@ -30,14 +30,13 @@ jobs:
         with:
           xcode-version: '16.0'
       - name: Build iOS app
-        working-directory: sample_testing/e2e-voice-text-harness/App
+        working-directory: sample_testing/e2e-voice-text-harness/app
         run: |
           xcodebuild build \
             -scheme VoiceTextDemo \
             -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=iPhone 16" \
+            -destination "generic/platform=iOS Simulator" \
             -derivedDataPath build
-
       - name: Run Backend and Tests
         working-directory: sample_testing/e2e-voice-text-harness
         env:
