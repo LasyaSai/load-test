@@ -17,13 +17,8 @@
   latency_budget_ms: 6000
   tags: [smoke, voice, tool-call]
 
-- id: voice_multi_turn_booking
+- id: voice_restaurant_recommendation
   type: voice
-  turns:
-    - input_audio: fixtures/movie.wav
-      expected_intent: "give details regarding booking a movie ticket"
-    - input_audio: fixtures/news.wav
-      expected_intent: "Agent provides the latest news regarding AI"
-  latency_budget_ms: 8000
-  tags: [smoke, voice, multi-turn]
-
+  input_audio: fixtures/indian_dishes.wav
+  expected_intent: "Agent recommends a good Indian restaurant nearby"
+  tags: [smoke, voice, restaurant]

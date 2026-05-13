@@ -28,15 +28,12 @@ jobs:
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.0'
-      
-      - name: Install Xcode platforms
-        run: xcodebuild -downloadAllPlatforms
+          xcode-version: 'latest-stable'
       
       - name: Select available iPhone simulator
         id: select-sim
         run: |
-          SIM_NAME=$(python - <<'PY'
+          SIM_OUTPUT=$(python - <<'PY'
           import json, subprocess, sys
           data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]).decode())
           for runtime, devices in data.get("devices", {}).items():
@@ -47,11 +44,13 @@ jobs:
                       continue
                   if "iPhone" not in device.get("name", ""):
                       continue
-                  print(device["name"])
+                  print(f"SIM_NAME={device['name']}")
+                  print(f"SIM_UDID={device['udid']}")
                   sys.exit(0)
           raise SystemExit("No available iPhone simulator found")
           PY
-          echo "SIM_NAME=$SIM_NAME" >> $GITHUB_OUTPUT
+          )
+          echo "$SIM_OUTPUT" >> "$GITHUB_OUTPUT"
       
       - name: Build iOS app
         working-directory: sample_testing/e2e-voice-text-harness/App
@@ -59,37 +58,23 @@ jobs:
           xcodebuild build \
             -scheme VoiceTextDemo \
             -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=${{ steps.select-sim.outputs.SIM_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.select-sim.outputs.SIM_UDID }}" \
             -derivedDataPath build
       - name: Boot Simulator
         run: |
-          SIM_NAME="${{ steps.select-sim.outputs.SIM_NAME }}"
-          SIM_ID=$(xcrun simctl list devices available | grep -F "$SIM_NAME" | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1)
-          if [ -z "$SIM_ID" ]; then
-            echo "No simulator ID found for $SIM_NAME"
-            exit 1
-          fi
-          xcrun simctl boot "$SIM_ID" || true
-          xcrun simctl bootstatus "$SIM_ID"
-      - name: Run Backend and Tests
+          SIM_UDID="${{ steps.select-sim.outputs.SIM_UDID }}"
+          xcrun simctl boot "$SIM_UDID" || true
+          xcrun simctl bootstatus "$SIM_UDID" -b
+      - name: Run Tests
         working-directory: sample_testing/e2e-voice-text-harness
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENROUTER_MODEL: google/gemma-7b-it:free
           PYTHONPATH: ${{ github.workspace }}
           IOS_SIMULATOR: ${{ steps.select-sim.outputs.SIM_NAME }}
+          IOS_SIMULATOR_UDID: ${{ steps.select-sim.outputs.SIM_UDID }}
         run: |
-          rm -rf /tmp/harness_outputs/xcresult
-          python example_backend.py > backend.log 2>&1 &
-          BACKEND_PID=$!
-          sleep 5
-          
-          # Run the tests
           python harness/runner/run_tests.py --suite smoke
-          
-          # Cleanup backend after tests finish
-          kill $BACKEND_PID || true
-        continue-on-error: true
 
       - name: Upload test reports
         if: always()

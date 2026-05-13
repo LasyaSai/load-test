@@ -95,6 +95,7 @@ struct MessageBubble: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Text(message.content)
+                    .accessibilityIdentifier(message.role == .user ? "user_message" : "assistant_message")
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(message.role == .user ? Color.blue : Color(UIColor.secondarySystemBackground))

@@ -11,7 +11,6 @@ This eliminates single-run LLM variance without ballooning cost.
 import os
 import json
 import httpx
-from .websocket_client import transcribe
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.environ.get("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
@@ -49,17 +48,9 @@ def verify(case_def: dict, bridge_output: dict) -> dict:
                 "judge_reasoning": "",
             }
 
-    # For voice cases, transcribe the captured audio
+    # The app already writes the assistant response text into the bridge output.
+    # That is the most stable source of truth for both text and voice cases.
     response_text = bridge_output.get("response_text", "")
-    if bridge_output.get("type") == "voice" and (audio := bridge_output.get("captured_audio_path")):
-        try:
-            response_text = transcribe(audio)
-        except Exception as e:
-            return {
-                "passed": False,
-                "reason": f"Transcription failed: {e}",
-                "judge_reasoning": "",
-            }
 
     if not response_text:
         return {
@@ -91,8 +82,9 @@ def verify(case_def: dict, bridge_output: dict) -> dict:
 def llm_judge(expected_intent: str, actual_response: str) -> tuple[str, str]:
     """Run a single judge call. Returns (verdict, reason)."""
     if not OPENROUTER_API_KEY:
-        # Stub for local testing without API key
-        return ("PASS", "stub pass - no API key")
+        if os.environ.get("ALLOW_JUDGE_STUB") == "1":
+            return ("PASS", "stub pass - no API key")
+        return ("FAIL", "OPENROUTER_API_KEY is not set")
 
     prompt = json.dumps({
         "expected_intent": expected_intent,

@@ -15,9 +15,8 @@ FIXTURES_DIR = Path(__file__).resolve().parents[1]
 FIXTURES = {
     "hello_how_are_you.wav": "Hello! How are you doing today?",
     "weather.wav": "What's the weather like in Dubai today?",
-    "movie.wav": "Can you help me book a movie ticket?",
-    "news.wav": "What is latest news regarding AI.",
-    "travel.wav": "Where is good place to travel in UAE during May",
+    "indian_dishes.wav": "Can you recommend a good Indian restaurant nearby?",
+    "weather_regression.wav": "What is the best pizza to have in Dubai",
 }
 
 def generate_with_gtts():

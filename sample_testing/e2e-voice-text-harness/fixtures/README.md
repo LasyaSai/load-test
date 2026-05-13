@@ -7,9 +7,9 @@ WAV audio files used as mic input for voice test cases.
 | File | Used by |
 |------|---------|
 | `hello_how_are_you.wav` | `voice_greeting_basic` |
-| `whats_the_weather_in_dubai.wav` | `voice_weather_dubai`, `regression_weather_tool_removed_voice` |
-| `book_a_table.wav` | `voice_multi_turn_booking` (turn 1) |
-| `tomorrow_8pm_for_two.wav` | `voice_multi_turn_booking` (turn 2) |
+| `weather.wav` | `voice_weather_dubai`, `regression_weather_tool_removed_voice` |
+| `indian_dishes.wav` | `voice_restaurant_recommendation` |
+| `weather_regression.wav` | alternate weather regression prompt |
 
 ## Format requirements
 

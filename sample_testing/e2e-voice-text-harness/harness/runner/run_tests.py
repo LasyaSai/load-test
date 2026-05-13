@@ -26,6 +26,7 @@ XCODEBUILD = "xcodebuild"
 SCHEME = "VoiceTextDemo"
 TEST_TARGET = "AudioBridgeTests"
 SIMULATOR = os.environ.get("IOS_SIMULATOR", "iPhone 16")
+SIMULATOR_UDID = os.environ.get("IOS_SIMULATOR_UDID", "")
 TMP_DIR = Path("/tmp/harness_outputs")
 MAX_RETRIES = 2
 
@@ -50,7 +51,8 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"  E2E Harness — {len(cases)} case(s)")
-    print(f"  Simulator: {SIMULATOR}")
+    sim_label = f"{SIMULATOR} ({SIMULATOR_UDID})" if SIMULATOR_UDID else SIMULATOR
+    print(f"  Simulator: {sim_label}")
     print(f"{'='*60}\n")
 
     report = HarnessReport()
@@ -105,6 +107,12 @@ def run_case(case_def: dict) -> dict:
     elif case_def.get("type") == "voice":
         audio_path = str(REPO_ROOT / case_def.get("input_audio", ""))
         env["CASE_INPUT_AUDIO"] = audio_path
+        env["CASE_TRANSCRIPT"] = resolve_voice_transcript(case_def)
+
+    if case_def.get("turns"):
+        raise NotImplementedError(
+            f"Multi-turn cases are not yet supported by the current runner: {case_def['id']}"
+        )
 
     if case_def.get("regression_break"):
         env["REGRESSION_BREAK_TOOL_CALL"] = "YES"
@@ -157,6 +165,31 @@ def run_case(case_def: dict) -> dict:
         "latency_ok": latency_ok,
         "captured_audio": bridge_output.get("captured_audio_path"),
     }
+
+
+def resolve_voice_transcript(case_def: dict) -> str:
+    """Resolve the plain-text transcript for a voice fixture."""
+    input_audio = case_def.get("input_audio", "")
+    if not input_audio:
+        return ""
+
+    transcript_map_path = REPO_ROOT / "fixtures" / "transcripts.json"
+    fixture_name = Path(input_audio).name
+
+    try:
+        with open(transcript_map_path, encoding="utf-8") as f:
+            mapping = json.load(f)
+        transcript = mapping.get(fixture_name)
+        if transcript:
+            return transcript
+    except FileNotFoundError:
+        pass
+    except json.JSONDecodeError:
+        pass
+
+    return Path(fixture_name).stem.replace("_", " ")
+
+
 def run_xctest(env: dict) -> dict:
 
 
@@ -164,15 +197,13 @@ def run_xctest(env: dict) -> dict:
     if xcresult_path.exists():
         shutil.rmtree(xcresult_path)
 
-    if "e2e-voice-text-harness" in os.getcwd():
-        project_dir = Path.cwd() / "App"
-    else:
-        project_dir = REPO_ROOT / "sample_testing/e2e-voice-text-harness/App"
+    project_dir = REPO_ROOT / "App"
+    destination = f"platform=iOS Simulator,id={SIMULATOR_UDID}" if SIMULATOR_UDID else f"platform=iOS Simulator,name={SIMULATOR}"
 
     cmd = [
         "xcodebuild", "test",
         "-scheme", "VoiceTextDemo",
-        "-destination", "platform=iOS Simulator,name=iPhone 16",
+        "-destination", destination,
         "-resultBundlePath", str(xcresult_path),
         "-allowProvisioningUpdates",
         "-parallel-testing-enabled", "NO", 
