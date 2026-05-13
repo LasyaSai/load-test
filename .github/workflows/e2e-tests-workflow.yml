@@ -74,7 +74,13 @@ jobs:
           PY
           )
           echo "$SIM_OUTPUT" >> "$GITHUB_OUTPUT"
-      
+
+      - name: Boot Simulator
+        run: |
+          SIM_UDID="${{ steps.select-sim.outputs.SIM_UDID }}"
+          xcrun simctl boot "$SIM_UDID" || true
+          xcrun simctl bootstatus "$SIM_UDID" -b
+     
       - name: Build iOS app
         working-directory: sample_testing/e2e-voice-text-harness/App
         run: |
@@ -127,11 +133,6 @@ jobs:
           PLIST
           xcrun simctl install "${{ steps.select-sim.outputs.SIM_UDID }}" "$APP_PATH"
 
-      - name: Boot Simulator
-        run: |
-          SIM_UDID="${{ steps.select-sim.outputs.SIM_UDID }}"
-          xcrun simctl boot "$SIM_UDID" || true
-          xcrun simctl bootstatus "$SIM_UDID" -b
       - name: Run Tests
         working-directory: sample_testing/e2e-voice-text-harness
         env:
