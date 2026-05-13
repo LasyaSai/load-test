@@ -25,7 +25,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 XCODEBUILD = "xcodebuild"
 SCHEME = "VoiceTextDemo"
 TEST_TARGET = "AudioBridgeTests"
-SIMULATOR = os.environ.get("IOS_SIMULATOR", "iPhone 15 Pro")
+SIMULATOR = os.environ.get("IOS_SIMULATOR", "iPhone 16")
 TMP_DIR = Path("/tmp/harness_outputs")
 MAX_RETRIES = 2
 
@@ -158,25 +158,33 @@ def run_case(case_def: dict) -> dict:
         "captured_audio": bridge_output.get("captured_audio_path"),
     }
 
-
 def run_xctest(env: dict) -> dict:
+    import shutil
+    import os
+    
     xcresult_path = TMP_DIR / "xcresult"
     if xcresult_path.exists():
-        import shutil
         shutil.rmtree(xcresult_path)
 
-    project_path = REPO_ROOT / "app" / "VoiceTextDemo"
+    project_dir = REPO_ROOT / "sample_testing/e2e-voice-text-harness/app/VoiceTextDemo"
 
     cmd = [
         XCODEBUILD, "test",
-        "-packagePath", str(project_path), 
         "-scheme", SCHEME,
         "-destination", f"platform=iOS Simulator,name={SIMULATOR}",
         "-only-testing", f"{TEST_TARGET}/AudioBridgeTests/testRunCase",
-        "-resultBundlePath", str(xcresult_path),
+        "-resultBundlePath", str(xcresult_path)
     ]
+
+    result = subprocess.run(
+        cmd, 
+        capture_output=True, 
+        text=True, 
+        env=env, 
+        cwd=str(project_dir), 
+        timeout=180
+    )
     
-    result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
     return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
 if __name__ == "__main__":
     main()
