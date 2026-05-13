@@ -1,5 +1,6 @@
 import Foundation
 import XCTest
+import XCUITest
 
 /// AudioBridgeTests drives the sample app through UI interactions and
 /// writes a small JSON payload for the Python harness to verify.
