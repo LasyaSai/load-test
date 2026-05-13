@@ -170,8 +170,7 @@ def run_xctest(env: dict) -> dict:
 
 
     xcresult_path = TMP_DIR / "xcresult"
-    if xcresult_path.exists():
-        shutil.rmtree(xcresult_path)
+    remove_path_if_exists(xcresult_path)
 
     project_dir = REPO_ROOT / "App"
     destination = f"platform=iOS Simulator,id={SIMULATOR_UDID}" if SIMULATOR_UDID else f"platform=iOS Simulator,name={SIMULATOR}"
@@ -195,5 +194,17 @@ def run_xctest(env: dict) -> dict:
     )
     
     return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
+
+
+def remove_path_if_exists(path: Path) -> None:
+    """Remove a file, symlink, or directory if present."""
+    if not path.exists() and not path.is_symlink():
+        return
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+        return
+    shutil.rmtree(path)
+
+
 if __name__ == "__main__":
     main()
