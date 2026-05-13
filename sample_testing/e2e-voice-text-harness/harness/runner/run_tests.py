@@ -17,7 +17,7 @@ import sys
 import time
 import uuid
 from pathlib import Path
-
+import shutil
 from test_loader import load_suite, load_single_case
 from report import HarnessReport
 
@@ -160,6 +160,9 @@ def run_case(case_def: dict) -> dict:
 
 
 def run_xctest(env: dict) -> dict:
+    xcresult_path = TMP_DIR / "xcresult"
+    if xcresult_path.exists():
+        shutil.rmtree(xcresult_path)
     cmd = [
         XCODEBUILD, "test",
         "-scheme", SCHEME,
