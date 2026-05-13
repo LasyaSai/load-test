@@ -39,8 +39,9 @@ jobs:
             -derivedDataPath build
       - name: Boot Simulator
         run: |
-          xcrun simctl boot "iPhone 16" || true
-          xcrun simctl bootstatus "iPhone 16"
+          SIM_ID=$(xcrun simctl list devices "iPhone 16" available | grep -m 1 -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+          xcrun simctl boot $SIM_ID || true
+          xcrun simctl bootstatus $SIM_ID
       - name: Run Backend and Tests
         working-directory: sample_testing/e2e-voice-text-harness
         env:

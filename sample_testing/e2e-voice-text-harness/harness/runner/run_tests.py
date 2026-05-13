@@ -170,11 +170,12 @@ def run_xctest(env: dict) -> dict:
         project_dir = REPO_ROOT / "sample_testing/e2e-voice-text-harness/App"
 
     cmd = [
-        XCODEBUILD, "test",
-        "-scheme", SCHEME,
-        "-destination", f"platform=iOS Simulator,name={SIMULATOR}",
-        "-only-testing", f"{TEST_TARGET}/AudioBridgeTests/testRunCase",
-        "-resultBundlePath", str(xcresult_path)
+        "xcodebuild", "test",
+        "-scheme", "VoiceTextDemo",
+        "-destination", "platform=iOS Simulator,name=iPhone 16",
+        "-resultBundlePath", str(xcresult_path),
+        "-allowProvisioningUpdates",
+        "-parallel-testing-enabled", "NO", 
     ]
 
     result = subprocess.run(
@@ -183,7 +184,7 @@ def run_xctest(env: dict) -> dict:
         text=True, 
         env=env, 
         cwd=str(project_dir), 
-        timeout=180
+        timeout=300
     )
     
     return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
