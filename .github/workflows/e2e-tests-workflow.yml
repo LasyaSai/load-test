@@ -30,15 +30,13 @@ jobs:
         with:
           xcode-version: '16.0'
       
-      - name: Generate Xcode project
-        working-directory: sample_testing/e2e-voice-text-harness/App
-        run: swift package generate-xcodeproj
+      - name: Install Xcode platforms
+        run: xcodebuild -downloadAllPlatforms
       
       - name: Build iOS app
         working-directory: sample_testing/e2e-voice-text-harness/App
         run: |
           xcodebuild build \
-            -project VoiceTextDemo.xcodeproj \
             -scheme VoiceTextDemo \
             -sdk iphonesimulator \
             -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
