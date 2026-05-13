@@ -8,21 +8,10 @@ let package = Package(
         .executable(name: "VoiceTextDemo", targets: ["VoiceTextDemo"])
     ],
     targets: [
-        .executableTarget(
-            name: "VoiceTextDemo",
-            path: ".",
-            sources: [
-                "AudioManager.swift", 
-                "ChatViewModel.swift", 
-                "ContentView.swift", 
-                "VoiceTextDemoApp.swift"
-            ]
-        ),
+        .executableTarget(name: "VoiceTextDemo"),
         .testTarget(
             name: "AudioBridgeTests",
-            dependencies: ["VoiceTextDemo"],
-            path: ".", 
-            sources: ["AudioBridgeTests.swift"] 
+            dependencies: ["VoiceTextDemo"]
         )
     ]
 )

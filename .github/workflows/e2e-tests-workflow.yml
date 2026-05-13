@@ -29,16 +29,14 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '16.0'
-      
       - name: Build iOS app
         working-directory: sample_testing/e2e-voice-text-harness/app/VoiceTextDemo
         run: |
           xcodebuild build \
             -scheme VoiceTextDemo \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
-            -sdk iphonesimulator
-
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" \
+            -derivedDataPath build
+            
       - name: Run Backend and Tests
         working-directory: sample_testing/e2e-voice-text-harness
         env:
