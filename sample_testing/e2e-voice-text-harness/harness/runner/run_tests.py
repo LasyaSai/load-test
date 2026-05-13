@@ -170,7 +170,9 @@ def run_xctest(env: dict) -> dict:
 
 
     xcresult_path = TMP_DIR / "xcresult"
+    xcresult_symlink = Path(str(xcresult_path) + ".xcresult")
     remove_path_if_exists(xcresult_path)
+    remove_path_if_exists(xcresult_symlink)
 
     project_dir = REPO_ROOT / "App"
     destination = f"platform=iOS Simulator,id={SIMULATOR_UDID}" if SIMULATOR_UDID else f"platform=iOS Simulator,name={SIMULATOR}"
