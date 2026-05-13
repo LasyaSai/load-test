@@ -37,6 +37,10 @@ jobs:
             -sdk iphonesimulator \
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath build
+      - name: Boot Simulator
+        run: |
+          xcrun simctl boot "iPhone 16" || true
+          xcrun simctl bootstatus "iPhone 16"
       - name: Run Backend and Tests
         working-directory: sample_testing/e2e-voice-text-harness
         env:
