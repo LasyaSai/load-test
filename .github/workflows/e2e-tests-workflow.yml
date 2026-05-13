@@ -34,20 +34,36 @@ jobs:
         id: select-sim
         run: |
           SIM_OUTPUT=$(python - <<'PY'
-          import json, subprocess, sys
-          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]).decode())
-          for runtime, devices in data.get("devices", {}).items():
-              if not runtime.startswith("com.apple.CoreSimulator.SimRuntime.iOS"):
-                  continue
-              for device in devices:
-                  if device.get("availability") != "(available)":
-                      continue
-                  if "iPhone" not in device.get("name", ""):
-                      continue
-                  print(f"SIM_NAME={device['name']}")
-                  print(f"SIM_UDID={device['udid']}")
-                  sys.exit(0)
-          raise SystemExit("No available iPhone simulator found")
+          import json
+          import subprocess
+          import sys
+          import uuid
+
+          runtimes = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "runtimes", "-j"]).decode())
+          runtime_candidates = [
+              rt for rt in runtimes.get("runtimes", [])
+              if rt.get("isAvailable") and rt.get("identifier", "").startswith("com.apple.CoreSimulator.SimRuntime.iOS")
+          ]
+          if not runtime_candidates:
+              raise SystemExit("No available iOS runtime found")
+          runtime = sorted(runtime_candidates, key=lambda rt: rt.get("version", ""), reverse=True)[0]
+
+          devicetypes = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devicetypes", "-j"]).decode())
+          device_candidates = [
+              dt for dt in devicetypes.get("devicetypes", [])
+              if "iPhone" in dt.get("name", "") and dt.get("identifier", "").startswith("com.apple.CoreSimulator.SimDeviceType.")
+          ]
+          if not device_candidates:
+              raise SystemExit("No iPhone device type found")
+          preferred = [dt for dt in device_candidates if dt.get("name") == "iPhone 16"]
+          device_type = preferred[0] if preferred else sorted(device_candidates, key=lambda dt: dt.get("name", ""), reverse=True)[0]
+
+          sim_name = f"e2e-{uuid.uuid4().hex[:8]}"
+          sim_udid = subprocess.check_output([
+              "xcrun", "simctl", "create", sim_name, device_type["identifier"], runtime["identifier"]
+          ]).decode().strip()
+          print(f"SIM_NAME={sim_name}")
+          print(f"SIM_UDID={sim_udid}")
           PY
           )
           echo "$SIM_OUTPUT" >> "$GITHUB_OUTPUT"
