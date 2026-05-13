@@ -44,6 +44,7 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENROUTER_MODEL: google/gemma-7b-it:free
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           rm -rf /tmp/harness_outputs/xcresult
           python example_backend.py > backend.log 2>&1 &
