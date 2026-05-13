@@ -88,10 +88,43 @@ jobs:
         working-directory: sample_testing/e2e-voice-text-harness/App
         run: |
           APP_PATH=$(find build -name VoiceTextDemo.app -type d | head -n 1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Unable to find built app bundle"
+          if [ -n "$APP_PATH" ]; then
+            xcrun simctl install "${{ steps.select-sim.outputs.SIM_UDID }}" "$APP_PATH"
+            exit 0
+          fi
+
+          EXECUTABLE_PATH=$(find build -type f -name VoiceTextDemo | head -n 1)
+          if [ -z "$EXECUTABLE_PATH" ]; then
+            echo "Unable to find built app bundle or executable"
+            find build -maxdepth 5 | sed -n '1,120p'
             exit 1
           fi
+
+          APP_PATH=build/VoiceTextDemo.app
+          rm -rf "$APP_PATH"
+          mkdir -p "$APP_PATH"
+          cp "$EXECUTABLE_PATH" "$APP_PATH/VoiceTextDemo"
+          chmod +x "$APP_PATH/VoiceTextDemo"
+          cat > "$APP_PATH/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>VoiceTextDemo</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.example.VoiceTextDemo</string>
+            <key>CFBundleName</key>
+            <string>VoiceTextDemo</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+          </dict>
+          </plist>
+          PLIST
           xcrun simctl install "${{ steps.select-sim.outputs.SIM_UDID }}" "$APP_PATH"
 
       - name: Boot Simulator
