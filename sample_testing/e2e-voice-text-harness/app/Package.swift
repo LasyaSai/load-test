@@ -11,11 +11,6 @@ let package = Package(
         .executableTarget(
             name: "VoiceTextDemo",
             path: "Sources/VoiceTextDemo" // This matches your new folder!
-        ),
-        .testTarget(
-            name: "AudioBridgeTests",
-            dependencies: ["VoiceTextDemo"],
-            path: "Tests/AudioBridgeTests" // This matches your new folder!
         )
     ]
 )

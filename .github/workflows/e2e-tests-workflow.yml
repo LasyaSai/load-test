@@ -29,6 +29,13 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: 'latest-stable'
+
+      - name: Install Maestro CLI
+        run: |
+          if ! command -v maestro >/dev/null 2>&1; then
+            curl -fsSL "https://get.maestro.mobile.dev" | bash
+            echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          fi
       
       - name: Select available iPhone simulator
         id: select-sim
@@ -76,6 +83,17 @@ jobs:
             -sdk iphonesimulator \
             -destination "platform=iOS Simulator,id=${{ steps.select-sim.outputs.SIM_UDID }}" \
             -derivedDataPath build
+
+      - name: Install app on simulator
+        working-directory: sample_testing/e2e-voice-text-harness/App
+        run: |
+          APP_PATH=$(find build -name VoiceTextDemo.app -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Unable to find built app bundle"
+            exit 1
+          fi
+          xcrun simctl install "${{ steps.select-sim.outputs.SIM_UDID }}" "$APP_PATH"
+
       - name: Boot Simulator
         run: |
           SIM_UDID="${{ steps.select-sim.outputs.SIM_UDID }}"
@@ -89,6 +107,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
           IOS_SIMULATOR: ${{ steps.select-sim.outputs.SIM_NAME }}
           IOS_SIMULATOR_UDID: ${{ steps.select-sim.outputs.SIM_UDID }}
+          APP_BUNDLE_ID: com.example.VoiceTextDemo
         run: |
           python harness/runner/run_tests.py --suite smoke
 

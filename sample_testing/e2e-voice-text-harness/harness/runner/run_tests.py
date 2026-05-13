@@ -22,9 +22,8 @@ from test_loader import load_suite, load_single_case
 from report import HarnessReport
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-XCODEBUILD = "xcodebuild"
-SCHEME = "VoiceTextDemo"
-TEST_TARGET = "AudioBridgeTests"
+MAESTRO_BIN = os.environ.get("MAESTRO_BIN", "maestro")
+APP_BUNDLE_ID = os.environ.get("APP_BUNDLE_ID", "com.example.VoiceTextDemo")
 SIMULATOR = os.environ.get("IOS_SIMULATOR", "iPhone 16")
 SIMULATOR_UDID = os.environ.get("IOS_SIMULATOR_UDID", "")
 TMP_DIR = Path("/tmp/harness_outputs")
@@ -115,26 +114,26 @@ def run_case(case_def: dict) -> dict:
 
     if case_def.get("regression_break"):
         env["REGRESSION_BREAK_TOOL_CALL"] = "YES"
+    else:
+        env["REGRESSION_BREAK_TOOL_CALL"] = "NO"
 
-    # Run XCTest bridge
-    xcode_result = run_xctest(env)
+    maestro_result = run_maestro(case_def, env)
     duration_ms = int((time.time() - start) * 1000)
 
-    if xcode_result["returncode"] != 0:
+    if maestro_result["returncode"] != 0:
         return {
             "case_id": case_def["id"],
             "passed": False,
-            "fail_reason": f"XCTest failed: {xcode_result['stderr'][-500:]}",
+            "fail_reason": f"Maestro failed: {maestro_result['stderr'][-500:]}",
             "duration_ms": duration_ms,
         }
 
-    # Load output written by XCTest
-    output_file = Path(output_path + ".json")
-    if not output_file.exists():
+    output_file = wait_for_file(Path(output_path + ".json"), timeout=30)
+    if output_file is None:
         return {
             "case_id": case_def["id"],
             "passed": False,
-            "fail_reason": "No output file written by XCTest bridge",
+            "fail_reason": "No output file written by the app",
             "duration_ms": duration_ms,
         }
 
@@ -166,36 +165,86 @@ def run_case(case_def: dict) -> dict:
     }
 
 
-def run_xctest(env: dict) -> dict:
-
-
-    xcresult_path = TMP_DIR / "xcresult"
-    xcresult_symlink = Path(str(xcresult_path) + ".xcresult")
-    remove_path_if_exists(xcresult_path)
-    remove_path_if_exists(xcresult_symlink)
-
-    project_dir = REPO_ROOT / "App"
-    destination = f"platform=iOS Simulator,id={SIMULATOR_UDID}" if SIMULATOR_UDID else f"platform=iOS Simulator,name={SIMULATOR}"
+def run_maestro(case_def: dict, env: dict) -> dict:
+    """Run the appropriate Maestro flow for the case."""
+    flow_name = "voice_flow.yaml" if case_def.get("type") == "voice" else "text_chat_flow.yaml"
+    flow_path = REPO_ROOT / "maestro" / flow_name
+    maestro_env = {
+        **env,
+        "APP_ID": APP_BUNDLE_ID,
+    }
 
     cmd = [
-        "xcodebuild", "test",
-        "-scheme", "VoiceTextDemo",
-        "-destination", destination,
-        "-resultBundlePath", str(xcresult_path),
-        "-allowProvisioningUpdates",
-        "-parallel-testing-enabled", "NO", 
+        MAESTRO_BIN,
+        "--device",
+        SIMULATOR_UDID,
+        "test",
+        str(flow_path),
     ]
 
-    result = subprocess.run(
-        cmd, 
-        capture_output=True, 
-        text=True, 
-        env=env, 
-        cwd=str(project_dir), 
-        timeout=300
+    for key in [
+        "APP_ID",
+        "CASE_TYPE",
+        "CASE_OUTPUT_PATH",
+        "CASE_INPUT_TEXT",
+        "CASE_INPUT_AUDIO",
+        "OPENROUTER_API_KEY",
+        "OPENROUTER_BASE_URL",
+        "OPENROUTER_MODEL",
+        "REGRESSION_BREAK_TOOL_CALL",
+    ]:
+        value = maestro_env.get(key)
+        if value:
+            cmd.extend(["-e", f"{key}={value}"])
+
+    return run_command_streaming(
+        cmd,
+        env=maestro_env,
+        cwd=str(REPO_ROOT),
+        timeout=300,
     )
-    
-    return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
+
+
+def run_command_streaming(cmd: list[str], env: dict, cwd: str, timeout: int) -> dict:
+    """Run a command while streaming output to the console."""
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=env,
+        cwd=cwd,
+        bufsize=1,
+    )
+
+    output_lines: list[str] = []
+    start = time.time()
+
+    assert process.stdout is not None
+    while True:
+        line = process.stdout.readline()
+        if line:
+            print(line, end="")
+            output_lines.append(line)
+        elif process.poll() is not None:
+            break
+        elif time.time() - start > timeout:
+            process.kill()
+            remaining = process.stdout.read() or ""
+            if remaining:
+                print(remaining, end="")
+                output_lines.append(remaining)
+            return {
+                "returncode": 124,
+                "stdout": "".join(output_lines),
+                "stderr": f"Command timed out after {timeout}s",
+            }
+
+    return {
+        "returncode": process.returncode or 0,
+        "stdout": "".join(output_lines),
+        "stderr": "",
+    }
 
 
 def remove_path_if_exists(path: Path) -> None:
@@ -206,6 +255,16 @@ def remove_path_if_exists(path: Path) -> None:
         path.unlink()
         return
     shutil.rmtree(path)
+
+
+def wait_for_file(path: Path, timeout: int) -> Path | None:
+    """Poll for a file to exist for up to timeout seconds."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if path.exists():
+            return path
+        time.sleep(1)
+    return None
 
 
 if __name__ == "__main__":

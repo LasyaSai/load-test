@@ -4,14 +4,20 @@
 # Maestro handles UI interaction. The Python runner dispatches this
 # flow for text cases that don't need the XCTest audio bridge.
 
-appId: com.example.VoiceTextDemo
+appId: ${APP_ID}
 ---
-- launchApp
+- launchApp:
+    arguments:
+      CASE_TYPE: ${CASE_TYPE}
+      CASE_OUTPUT_PATH: ${CASE_OUTPUT_PATH}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL}
 - assertVisible:
     id: text_input_field
 - tapOn:
     id: text_input_field
-- inputText: "Hello, can you help me?"
+- inputText: ${CASE_INPUT_TEXT}
 - tapOn:
     id: send_text_button
 - waitForAnimationToEnd:

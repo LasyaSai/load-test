@@ -36,33 +36,42 @@ class ChatViewModel: ObservableObject {
 
     private let audioManager = AudioManager()
     private var cancellables = Set<AnyCancellable>()
+    private var lastAssistantResponseText: String = ""
     private var testInjectedAudioURL: URL? {
-        guard let path = ProcessInfo.processInfo.environment["CASE_INPUT_AUDIO"], !path.isEmpty else { return nil }
+        guard let path = launchValue("CASE_INPUT_AUDIO"), !path.isEmpty else { return nil }
         return URL(fileURLWithPath: path)
+    }
+
+    private var caseType: String {
+        launchValue("CASE_TYPE") ?? "text"
+    }
+
+    private var caseOutputPath: String? {
+        launchValue("CASE_OUTPUT_PATH")
     }
 
     // NOTE: In production, load from environment / keychain.
     // For the harness demo this is injected via launch arguments.
     private var apiKey: String {
-        ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"]
+        launchValue("OPENROUTER_API_KEY")
             ?? Bundle.main.infoDictionary?["OPENROUTER_API_KEY"] as? String
             ?? ""
     }
 
     private var apiBaseURL: String {
-        ProcessInfo.processInfo.environment["OPENROUTER_BASE_URL"]
+        launchValue("OPENROUTER_BASE_URL")
             ?? "https://openrouter.ai/api/v1"
     }
 
     private var modelName: String {
-        ProcessInfo.processInfo.environment["OPENROUTER_MODEL"]
+        launchValue("OPENROUTER_MODEL")
             ?? "openrouter/free"
     }
 
     // Regression flag: set to true to deliberately break tool-call behaviour.
     // Harness sets via launch arg: -REGRESSION_BREAK_TOOL_CALL YES
     private var regressionBreakToolCall: Bool {
-        ProcessInfo.processInfo.environment["REGRESSION_BREAK_TOOL_CALL"] == "YES"
+        launchValue("REGRESSION_BREAK_TOOL_CALL") == "YES"
     }
 
     func setup() {
@@ -77,7 +86,9 @@ class ChatViewModel: ObservableObject {
         }
         audioManager.onCaptureFinished = { [weak self] path in
             Task { @MainActor in
-                self?.capturedAudioPath = path
+                guard let self else { return }
+                self.capturedAudioPath = path
+                self.persistCaseOutput(capturedAudioPath: path)
             }
         }
     }
@@ -207,13 +218,61 @@ class ChatViewModel: ObservableObject {
             if !responseText.isEmpty {
                 let assistantMessage = ChatMessage(role: .assistant, content: responseText)
                 messages.append(assistantMessage)
+                lastAssistantResponseText = responseText
                 if speakResponse {
                     audioManager.speak(text: responseText)
+                } else {
+                    persistCaseOutput(capturedAudioPath: nil)
                 }
             }
         } catch {
             messages.append(ChatMessage(role: .assistant, content: "Error: \(error.localizedDescription)"))
         }
+    }
+
+    private func persistCaseOutput(capturedAudioPath: String?) {
+        guard let outputPath = caseOutputPath, !outputPath.isEmpty else { return }
+
+        var payload: [String: Any] = [
+            "type": caseType,
+            "response_text": lastAssistantResponseText,
+            "tool_called": lastToolCalled,
+            "timestamp": ISO8601DateFormatter().string(from: Date())
+        ]
+        if let capturedAudioPath, !capturedAudioPath.isEmpty {
+            payload["captured_audio_path"] = capturedAudioPath
+        }
+
+        guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload, options: .prettyPrinted) else {
+            return
+        }
+
+        try? data.write(to: URL(fileURLWithPath: outputPath + ".json"), options: .atomic)
+    }
+
+    private func launchValue(_ key: String) -> String? {
+        if let envValue = ProcessInfo.processInfo.environment[key], !envValue.isEmpty {
+            return envValue
+        }
+
+        if let userDefaultsValue = UserDefaults.standard.string(forKey: key), !userDefaultsValue.isEmpty {
+            return userDefaultsValue
+        }
+
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: key), index + 1 < arguments.count {
+            let value = arguments[index + 1]
+            return value.isEmpty ? nil : value
+        }
+
+        let prefixed = arguments.first { $0.hasPrefix("\(key)=") }
+        if let prefixed, let range = prefixed.range(of: "=") {
+            let value = String(prefixed[range.upperBound...])
+            return value.isEmpty ? nil : value
+        }
+
+        return nil
     }
 }
 

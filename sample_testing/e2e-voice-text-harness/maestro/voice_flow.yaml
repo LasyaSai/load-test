@@ -2,9 +2,17 @@
 # Actual audio injection + capture is handled by the XCTest bridge.
 # This flow validates the UI state machine (button states, message appearance).
 
-appId: com.example.VoiceTextDemo
+appId: ${APP_ID}
 ---
-- launchApp
+- launchApp:
+    arguments:
+      CASE_TYPE: ${CASE_TYPE}
+      CASE_OUTPUT_PATH: ${CASE_OUTPUT_PATH}
+      CASE_INPUT_AUDIO: ${CASE_INPUT_AUDIO}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL}
+      REGRESSION_BREAK_TOOL_CALL: ${REGRESSION_BREAK_TOOL_CALL}
 - assertVisible:
     id: voice_button
 - tapOn:
@@ -14,6 +22,8 @@ appId: com.example.VoiceTextDemo
     id: voice_button
 - waitForAnimationToEnd:
     timeout: 2000
+- waitForAnimationToEnd:
+    timeout: 3000
 - tapOn:
     id: voice_button
 # After stop: wait for assistant response
