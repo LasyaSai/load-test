@@ -157,16 +157,17 @@ def run_case(case_def: dict) -> dict:
         "latency_ok": latency_ok,
         "captured_audio": bridge_output.get("captured_audio_path"),
     }
-
 def run_xctest(env: dict) -> dict:
-    import shutil
-    import os
-    
+
+
     xcresult_path = TMP_DIR / "xcresult"
     if xcresult_path.exists():
         shutil.rmtree(xcresult_path)
 
-    project_dir = REPO_ROOT / "sample_testing/e2e-voice-text-harness/app/VoiceTextDemo"
+    if "e2e-voice-text-harness" in os.getcwd():
+        project_dir = Path.cwd() / "app" / "VoiceTextDemo"
+    else:
+        project_dir = REPO_ROOT / "sample_testing/e2e-voice-text-harness/app/VoiceTextDemo"
 
     cmd = [
         XCODEBUILD, "test",
