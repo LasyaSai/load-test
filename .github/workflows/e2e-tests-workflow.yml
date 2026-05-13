@@ -29,13 +29,17 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '16.0'
+      
+      - name: Install iOS Platform
+        run: xcodebuild -downloadPlatform iOS
+      
       - name: Build iOS app
-        working-directory: sample_testing/e2e-voice-text-harness/app
+        working-directory: sample_testing/e2e-voice-text-harness/App
         run: |
           xcodebuild build \
             -scheme VoiceTextDemo \
             -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=iPhone 15,OS=17.5" \
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.0" \
             -derivedDataPath build
       - name: Boot Simulator
         run: |
