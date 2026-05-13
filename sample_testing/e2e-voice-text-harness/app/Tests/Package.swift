@@ -8,10 +8,14 @@ let package = Package(
         .executable(name: "VoiceTextDemo", targets: ["VoiceTextDemo"])
     ],
     targets: [
-        .executableTarget(name: "VoiceTextDemo"),
+        .executableTarget(
+            name: "VoiceTextDemo",
+            path: "Sources/VoiceTextDemo" // This matches your new folder!
+        ),
         .testTarget(
             name: "AudioBridgeTests",
-            dependencies: ["VoiceTextDemo"]
+            dependencies: ["VoiceTextDemo"],
+            path: "Tests/AudioBridgeTests" // This matches your new folder!
         )
     ]
 )
