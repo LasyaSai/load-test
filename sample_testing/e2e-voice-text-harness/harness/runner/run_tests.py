@@ -165,9 +165,9 @@ def run_xctest(env: dict) -> dict:
         shutil.rmtree(xcresult_path)
 
     if "e2e-voice-text-harness" in os.getcwd():
-        project_dir = Path.cwd() / "app" / "VoiceTextDemo"
+        project_dir = Path.cwd() / "App"
     else:
-        project_dir = REPO_ROOT / "sample_testing/e2e-voice-text-harness/app/VoiceTextDemo"
+        project_dir = REPO_ROOT / "sample_testing/e2e-voice-text-harness/App"
 
     cmd = [
         XCODEBUILD, "test",
