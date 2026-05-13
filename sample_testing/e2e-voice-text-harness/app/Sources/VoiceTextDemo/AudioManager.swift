@@ -68,11 +68,6 @@ class AudioManager: NSObject, AVSpeechSynthesizerDelegate {
     func injectAudioFile(url: URL, completion: @escaping () -> Void) {
         injectedAudioURL = url
 
-        let session = AVAudioSession.sharedInstance()
-        if session.isMicrophoneInjectionAvailable {
-            try? session.setPreferredMicrophoneInjectionMode(.spokenAudio)
-        }
-
         let engine = AVAudioEngine()
         let player = AVAudioPlayerNode()
         injectionEngine = engine
