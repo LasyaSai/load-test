@@ -162,17 +162,21 @@ def run_case(case_def: dict) -> dict:
 def run_xctest(env: dict) -> dict:
     xcresult_path = TMP_DIR / "xcresult"
     if xcresult_path.exists():
+        import shutil
         shutil.rmtree(xcresult_path)
+
+    project_path = REPO_ROOT / "app" / "VoiceTextDemo"
+
     cmd = [
         XCODEBUILD, "test",
+        "-packagePath", str(project_path), 
         "-scheme", SCHEME,
         "-destination", f"platform=iOS Simulator,name={SIMULATOR}",
         "-only-testing", f"{TEST_TARGET}/AudioBridgeTests/testRunCase",
-        "-resultBundlePath", str(TMP_DIR / "xcresult"),
+        "-resultBundlePath", str(xcresult_path),
     ]
+    
     result = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=120)
     return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
-
-
 if __name__ == "__main__":
     main()
