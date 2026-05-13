@@ -30,7 +30,7 @@ jobs:
         with:
           xcode-version: '16.0'
       - name: Build iOS app
-        working-directory: sample_testing/e2e-voice-text-harness/app
+        working-directory: sample_testing/e2e-voice-text-harness/App
         run: |
           xcodebuild build \
             -scheme VoiceTextDemo \
