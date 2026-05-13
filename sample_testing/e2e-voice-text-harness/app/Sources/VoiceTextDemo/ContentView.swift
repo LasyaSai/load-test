@@ -80,6 +80,15 @@ struct ContentView: View {
                 .padding(.bottom, 1)
                 .allowsHitTesting(false)
         }
+        .overlay(alignment: .bottomLeading) {
+            Text(viewModel.capturedAudioPath)
+                .font(.caption2)
+                .foregroundColor(.clear)
+                .accessibilityIdentifier("captured_audio_path")
+                .padding(.leading, 1)
+                .padding(.bottom, 1)
+                .allowsHitTesting(false)
+        }
         .onAppear { viewModel.setup() }
     }
 }

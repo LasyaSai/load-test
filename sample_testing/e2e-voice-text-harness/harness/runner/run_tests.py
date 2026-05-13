@@ -107,7 +107,6 @@ def run_case(case_def: dict) -> dict:
     elif case_def.get("type") == "voice":
         audio_path = str(REPO_ROOT / case_def.get("input_audio", ""))
         env["CASE_INPUT_AUDIO"] = audio_path
-        env["CASE_TRANSCRIPT"] = resolve_voice_transcript(case_def)
 
     if case_def.get("turns"):
         raise NotImplementedError(
@@ -165,29 +164,6 @@ def run_case(case_def: dict) -> dict:
         "latency_ok": latency_ok,
         "captured_audio": bridge_output.get("captured_audio_path"),
     }
-
-
-def resolve_voice_transcript(case_def: dict) -> str:
-    """Resolve the plain-text transcript for a voice fixture."""
-    input_audio = case_def.get("input_audio", "")
-    if not input_audio:
-        return ""
-
-    transcript_map_path = REPO_ROOT / "fixtures" / "transcripts.json"
-    fixture_name = Path(input_audio).name
-
-    try:
-        with open(transcript_map_path, encoding="utf-8") as f:
-            mapping = json.load(f)
-        transcript = mapping.get(fixture_name)
-        if transcript:
-            return transcript
-    except FileNotFoundError:
-        pass
-    except json.JSONDecodeError:
-        pass
-
-    return Path(fixture_name).stem.replace("_", " ")
 
 
 def run_xctest(env: dict) -> dict:

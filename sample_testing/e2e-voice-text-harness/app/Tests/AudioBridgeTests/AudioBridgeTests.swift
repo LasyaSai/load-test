@@ -12,8 +12,8 @@ final class AudioBridgeTests: XCTestCase {
         app.launchEnvironment["OPENROUTER_API_KEY"] = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"] ?? ""
         app.launchEnvironment["OPENROUTER_BASE_URL"] = ProcessInfo.processInfo.environment["OPENROUTER_BASE_URL"] ?? "https://openrouter.ai/api/v1"
         app.launchEnvironment["OPENROUTER_MODEL"] = ProcessInfo.processInfo.environment["OPENROUTER_MODEL"] ?? "openrouter/free"
-        if let transcript = ProcessInfo.processInfo.environment["CASE_TRANSCRIPT"], !transcript.isEmpty {
-            app.launchEnvironment["CASE_TRANSCRIPT"] = transcript
+        if let inputAudio = ProcessInfo.processInfo.environment["CASE_INPUT_AUDIO"], !inputAudio.isEmpty {
+            app.launchEnvironment["CASE_INPUT_AUDIO"] = inputAudio
         }
 
         if let breakFlag = ProcessInfo.processInfo.environment["REGRESSION_BREAK_TOOL_CALL"] {
@@ -71,12 +71,14 @@ final class AudioBridgeTests: XCTestCase {
 
         let assistantMessage = latestAssistantMessage()
         XCTAssertTrue(assistantMessage.waitForExistence(timeout: 30), "Assistant did not respond to voice input")
+        let capturedAudioPath = app.staticTexts["captured_audio_path"].exists ? app.staticTexts["captured_audio_path"].label : ""
 
         writeOutput(
             outputPath: outputPath,
             payload: [
                 "type": "voice",
                 "response_text": assistantMessage.label,
+                "captured_audio_path": capturedAudioPath,
                 "timestamp": ISO8601DateFormatter().string(from: Date())
             ]
         )

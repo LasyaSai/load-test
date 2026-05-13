@@ -32,9 +32,14 @@ class ChatViewModel: ObservableObject {
     @Published var isThinking: Bool = false
     @Published var isConnected: Bool = false
     @Published var lastToolCalled: String = ""
+    @Published var capturedAudioPath: String = ""
 
     private let audioManager = AudioManager()
     private var cancellables = Set<AnyCancellable>()
+    private var testInjectedAudioURL: URL? {
+        guard let path = ProcessInfo.processInfo.environment["CASE_INPUT_AUDIO"], !path.isEmpty else { return nil }
+        return URL(fileURLWithPath: path)
+    }
 
     // NOTE: In production, load from environment / keychain.
     // For the harness demo this is injected via launch arguments.
@@ -62,11 +67,17 @@ class ChatViewModel: ObservableObject {
 
     func setup() {
         isConnected = !apiKey.isEmpty
+        audioManager.setInjectedAudioURL(testInjectedAudioURL)
         audioManager.onTranscription = { [weak self] text in
             Task { @MainActor in
                 guard let self else { return }
                 self.messages.append(ChatMessage(role: .user, content: text))
                 await self.sendToLLM(userText: text, speakResponse: true)
+            }
+        }
+        audioManager.onCaptureFinished = { [weak self] path in
+            Task { @MainActor in
+                self?.capturedAudioPath = path
             }
         }
     }
@@ -86,6 +97,9 @@ class ChatViewModel: ObservableObject {
         } else {
             audioManager.startRecording()
             isRecording = true
+            if let audioURL = testInjectedAudioURL {
+                audioManager.injectAudioFile(url: audioURL) { }
+            }
         }
     }
 
