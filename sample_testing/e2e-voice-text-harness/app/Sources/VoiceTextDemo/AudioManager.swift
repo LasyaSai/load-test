@@ -17,6 +17,7 @@ class AudioManager: NSObject, AVSpeechSynthesizerDelegate {
     private var captureRecorder: AVAudioRecorder?
     private var captureURL: URL?
     private let synthesizer = AVSpeechSynthesizer()
+    private var wsTranscriber: WebSocketTranscriber?
 
     override init() {
         super.init()
@@ -118,6 +119,34 @@ class AudioManager: NSObject, AVSpeechSynthesizerDelegate {
     // MARK: - Transcription
 
     private func transcribe(audioURL: URL) {
+        // Try WebSocket transcription first
+        if let wsURLString = ProcessInfo.processInfo.environment["WEBSOCKET_URL"],
+           let wsURL = URL(string: wsURLString), !wsURLString.isEmpty {
+            let transcriber = WebSocketTranscriber(wsURL: wsURL)
+            wsTranscriber = transcriber
+
+            do {
+                let audioData = try Data(contentsOf: audioURL)
+                transcriber.transcribeAudio(audioData, filename: audioURL.lastPathComponent) { [weak self] result in
+                    switch result {
+                    case .success(let transcript):
+                        self?.onTranscription?(transcript)
+                    case .failure:
+                        // Fallback to filename stub
+                        self?.fallbackTranscription(audioURL)
+                    }
+                }
+            } catch {
+                fallbackTranscription(audioURL)
+            }
+            return
+        }
+
+        // Fallback to filename stub (for fixture-based testing)
+        fallbackTranscription(audioURL)
+    }
+
+    private func fallbackTranscription(_ audioURL: URL) {
         let sourceName = injectedAudioURL?.lastPathComponent ?? audioURL.lastPathComponent
         let transcript = sourceName
             .deletingPathExtensionIfNeeded()

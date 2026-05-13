@@ -5,12 +5,18 @@ let package = Package(
     name: "VoiceTextDemo",
     platforms: [.iOS(.v17)],
     products: [
-        .executable(name: "VoiceTextDemo", targets: ["VoiceTextDemo"])
+        .library(name: "VoiceTextDemo", targets: ["VoiceTextDemo"])
     ],
     targets: [
-        .executableTarget(
+        .target(
             name: "VoiceTextDemo",
-            path: "Sources/VoiceTextDemo" // This matches your new folder!
+            path: "Sources/VoiceTextDemo",
+            resources: [.process("Resources")]
+        ),
+        .testTarget(
+            name: "AudioBridgeTests",
+            dependencies: ["VoiceTextDemo"],
+            path: "Tests/AudioBridgeTests"
         )
     ]
 )
