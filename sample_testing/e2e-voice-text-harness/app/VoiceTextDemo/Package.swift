@@ -10,13 +10,13 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "VoiceTextDemo",
-            path: ".", // Tells Swift the code is right here in this folder
-            sources: [
-                "AudioManager.swift",
-                "ChatViewModel.swift",
-                "ContentView.swift",
-                "VoiceTextDemoApp.swift"
-            ]
+            path: ".",
+            sources: ["AudioManager.swift", "ChatViewModel.swift", "ContentView.swift", "VoiceTextDemoApp.swift"]
+        ),
+        .testTarget(
+            name: "AudioBridgeTests",
+            dependencies: ["VoiceTextDemo"],
+            path: "Tests" // Ensure your test files are in a folder named 'Tests'
         )
     ]
 )
